@@ -15,10 +15,10 @@ app.secret_key = "supersecretkey"
 ADMIN_PASSWORD = "admin123"  # simple admin password
 
 # Admin login check (super simple)
-def check_admin():
-    password = request.args.get("password")
+def check_admin(password):
     if password != ADMIN_PASSWORD:
-        abort(401)  # unauthorized
+        abort(401)  # Unauthorized
+
 
 @app.route('/admin/dashboard')
 def admin_dashboard():
@@ -28,6 +28,37 @@ def admin_dashboard():
 # Generate random ticket ID
 def generate_ticket_id():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+
+@app.route('/admin/bookings')
+def admin_bookings():
+    password = request.args.get("password")
+    check_admin(password)
+    cursor.execute("""
+        SELECT b.ticket_id, b.username, b.email, m.title, s.seat_no
+        FROM bookings b
+        JOIN movies m ON b.movie_id = m.id
+        JOIN seats s ON b.seat_id = s.id
+    """)
+    bookings = cursor.fetchall()
+    return render_template("admin_bookings.html", bookings=bookings)
+
+@app.route('/admin/add_movie', methods=["GET", "POST"])
+def add_movie():
+    password = request.args.get("password")
+    check_admin(password)
+    if request.method == "POST":
+        title = request.form["title"]
+        cursor.execute("INSERT INTO movies (title) VALUES (%s)", (title,))
+        db.commit()
+        movie_id = cursor.lastrowid
+        # Create seats for the movie
+        for n in range(25):
+            seat_no = chr(65 + n // 5) + str(n % 5 + 1)
+            cursor.execute("INSERT INTO seats (movie_id, seat_no) VALUES (%s,%s)", (movie_id, seat_no))
+        db.commit()
+        flash("Movie added successfully!")
+        return redirect(f"/admin/add_movie?password={password}")
+    return render_template("add_movie.html")
 
 @app.route('/', methods=["GET", "POST"])
 def home():
@@ -90,33 +121,8 @@ def ticket(ticket_id):
 if __name__ == "__main__":
     app.run(debug=True)
 
-@app.route('/admin/add_movie', methods=["GET", "POST"])
-def add_movie():
-    password = request.args.get("password")
-    check_admin(password)
-    if request.method == "POST":
-        title = request.form["title"]
-        cursor.execute("INSERT INTO movies (title) VALUES (%s)", (title,))
-        db.commit()
-        movie_id = cursor.lastrowid
-        # Create 25 seats
-        for n in range(25):
-            seat_no = chr(65 + n // 5) + str(n % 5 + 1)
-            cursor.execute("INSERT INTO seats (movie_id, seat_no) VALUES (%s,%s)", (movie_id, seat_no))
-        db.commit()
-        flash("Movie added successfully!")
-        return redirect(url_for("add_movie", password=password))
-    return render_template("add_movie.html")
 
-@app.route('/admin/bookings')
-def admin_bookings():
-    password = request.args.get("password")
-    check_admin(password)
-    cursor.execute("""SELECT b.ticket_id, b.username, b.email, m.title, s.seat_no 
-                      FROM bookings b 
-                      JOIN movies m ON b.movie_id=m.id 
-                      JOIN seats s ON b.seat_id=s.id""")
-    bookings = cursor.fetchall()
-    return render_template("admin_bookings.html", bookings=bookings)
+
+
 
 
