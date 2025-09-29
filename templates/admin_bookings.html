@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head><title>All Bookings</title></head>
+<body>
+<h1>All Bookings</h1>
+<table border="1">
+<tr><th>Ticket ID</th><th>Name</th><th>Email</th><th>Movie</th><th>Seat</th></tr>
+{% for b in bookings %}
+<tr>
+<td>{{ b.ticket_id }}</td>
+<td>{{ b.username }}</td>
+<td>{{ b.email }}</td>
+<td>{{ b.title }}</td>
+<td>{{ b.seat_no }}</td>
+</tr>
+{% endfor %}
+</table>
+</body>
+</html>
