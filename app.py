@@ -46,7 +46,6 @@ def admin_bookings():
     JOIN movies m ON st.movie_id = m.id
   """)
   bookings = cursor.fetchall()
-  # admin_bookings.html needs update to show show_time
   return render_template("admin_bookings.html", bookings=bookings)
 
 @app.route('/admin/add_movie', methods=["GET", "POST"])
@@ -57,9 +56,7 @@ def add_movie():
     title = request.form["title"]
     cursor.execute("INSERT INTO movies (title) VALUES (%s)", (title,))
     db.commit()
-    # Removed seat generation logic: seats are now generated per showtime
     flash(f"Movie '{title}' added successfully! Now add showtimes.")
-    # Ensure password is passed back on redirect
     return redirect(f"/admin/add_movie?password=admin123")
   return render_template("add_movie.html")
 
@@ -73,19 +70,14 @@ def admin_add_showtime():
 
     if request.method == "POST":
         movie_id = request.form["movie_id"]
-        
-        # --- CHANGES START HERE ---
-        # Capture the two separate fields
+        # Using two fields for better user input experience
         show_date = request.form["show_date"] 
         time_only = request.form["show_time_only"] 
         
         # Combine them into a DATETIME string format (YYYY-MM-DD HH:MM:00)
         show_time = f"{show_date} {time_only}:00" 
-        # --- CHANGES END HERE ---
-
 
         # 1. Insert showtime
-        # Assuming the 'showtimes' table structure (id, movie_id, show_time)
         cursor.execute("INSERT INTO showtimes (movie_id, show_time) VALUES (%s, %s)", (movie_id, show_time))
         db.commit()
         showtime_id = cursor.lastrowid
@@ -102,6 +94,126 @@ def admin_add_showtime():
     return render_template("admin_add_showtime.html", movies=movies)
 
 
+# NEW FEATURE: Remove Showtime
+@app.route('/admin/remove_showtime', methods=["GET", "POST"])
+def admin_remove_showtime():
+    password = request.args.get("password")
+    check_admin(password)
+
+    if request.method == "POST":
+        showtime_id = request.form.get("showtime_id")
+        
+        # Deletion requires specific order: Bookings -> Seats -> Showtime
+        # 1. Delete associated bookings
+        cursor.execute("DELETE FROM bookings WHERE showtime_id = %s", (showtime_id,))
+        # 2. Delete associated seats
+        cursor.execute("DELETE FROM seats WHERE showtime_id = %s", (showtime_id,))
+        # 3. Delete the showtime itself
+        cursor.execute("DELETE FROM showtimes WHERE id = %s", (showtime_id,))
+        
+        db.commit()
+        flash("Showtime and all associated bookings/seats removed successfully!", 'success')
+        return redirect(f"/admin/remove_showtime?password=admin123")
+
+    # GET request: Display list of showtimes
+    cursor.execute("""
+        SELECT st.id, st.show_time, m.title
+        FROM showtimes st
+        JOIN movies m ON st.movie_id = m.id
+        ORDER BY m.title, st.show_time
+    """)
+    showtimes = cursor.fetchall()
+    return render_template("admin_remove_showtime.html", showtimes=showtimes)
+
+
+# NEW FEATURE: Remove Movie
+@app.route('/admin/remove_movie', methods=["GET", "POST"])
+def admin_remove_movie():
+    password = request.args.get("password")
+    check_admin(password)
+
+    if request.method == "POST":
+        movie_id = request.form.get("movie_id")
+        
+        # Fetch showtime IDs associated with the movie
+        cursor.execute("SELECT id FROM showtimes WHERE movie_id = %s", (movie_id,))
+        showtime_ids = [row['id'] for row in cursor.fetchall()]
+        
+        # Deletion requires specific order: Bookings -> Seats -> Showtimes -> Movie
+        
+        if showtime_ids:
+            # Prepare SQL placeholders for IN clause
+            placeholders = ','.join(['%s'] * len(showtime_ids))
+            
+            # 1. Delete associated bookings
+            cursor.execute(f"DELETE FROM bookings WHERE showtime_id IN ({placeholders})", tuple(showtime_ids))
+            
+            # 2. Delete associated seats
+            cursor.execute(f"DELETE FROM seats WHERE showtime_id IN ({placeholders})", tuple(showtime_ids))
+            
+            # 3. Delete showtimes
+            cursor.execute(f"DELETE FROM showtimes WHERE movie_id = %s", (movie_id,))
+            
+        # 4. Delete the movie itself
+        cursor.execute("DELETE FROM movies WHERE id = %s", (movie_id,))
+        
+        db.commit()
+        flash("Movie, all showtimes, bookings, and seats removed successfully!", 'success')
+        return redirect(f"/admin/remove_movie?password=admin123")
+
+    # GET request: Display list of movies
+    cursor.execute("SELECT id, title FROM movies ORDER BY title")
+    movies = cursor.fetchall()
+    return render_template("admin_remove_movie.html", movies=movies)
+
+
+# NEW FEATURE: Admin Statistics/Reports
+@app.route('/admin/stats')
+def admin_stats():
+    password = request.args.get("password")
+    check_admin(password)
+
+    # Total Bookings
+    cursor.execute("SELECT COUNT(id) AS total_bookings FROM bookings")
+    total_bookings = cursor.fetchone()['total_bookings']
+
+    # Total Movies
+    cursor.execute("SELECT COUNT(id) AS total_movies FROM movies")
+    total_movies = cursor.fetchone()['total_movies']
+    
+    # Most Popular Showtime (By number of bookings)
+    cursor.execute("""
+        SELECT 
+            m.title, st.show_time, COUNT(b.id) AS booking_count
+        FROM bookings b
+        JOIN showtimes st ON b.showtime_id = st.id
+        JOIN movies m ON st.movie_id = m.id
+        GROUP BY st.id, st.show_time, m.title
+        ORDER BY booking_count DESC
+        LIMIT 5
+    """)
+    top_showtimes = cursor.fetchall()
+    
+    # Unbooked Seats (Total seats vs Total booked)
+    cursor.execute("SELECT COUNT(id) AS total_seats FROM seats")
+    total_seats = cursor.fetchone()['total_seats']
+    
+    cursor.execute("SELECT COUNT(id) AS booked_seats FROM seats WHERE is_booked = TRUE")
+    booked_seats = cursor.fetchone()['booked_seats']
+    
+    unbooked_seats = total_seats - booked_seats
+
+
+    stats = {
+        'total_bookings': total_bookings,
+        'total_movies': total_movies,
+        'unbooked_seats': unbooked_seats,
+        'top_showtimes': top_showtimes
+    }
+
+    return render_template("admin_stats.html", stats=stats)
+
+
 @app.route('/', methods=["GET", "POST"])
 def home():
   if request.method == "POST" and "admin_password" in request.form:
@@ -116,7 +228,6 @@ def home():
   movies = cursor.fetchall()
   return render_template("index.html", movies=movies)
 
-# New route to select showtimes for a movie
 @app.route('/timings/<int:movie_id>')
 def show_timings(movie_id):
     cursor.execute("SELECT title FROM movies WHERE id=%s", (movie_id,))
@@ -124,17 +235,14 @@ def show_timings(movie_id):
     if not movie:
         abort(404)
 
-    # Fetch available showtimes for the movie
     cursor.execute("SELECT id, show_time FROM showtimes WHERE movie_id=%s ORDER BY show_time", (movie_id,))
     showtimes = cursor.fetchall()
 
     return render_template("timings.html", movie=movie, showtimes=showtimes)
 
 
-# Seats now require showtime_id
 @app.route('/seats/<int:showtime_id>')
 def seats(showtime_id):
-  # Fetch movie title and showtime details
   cursor.execute("""
       SELECT st.id, st.show_time, m.title 
       FROM showtimes st
@@ -146,17 +254,13 @@ def seats(showtime_id):
   if not showtime_data:
       abort(404)
       
-  # Fetch seats linked to this specific showtime
   cursor.execute("SELECT * FROM seats WHERE showtime_id=%s ORDER BY seat_no", (showtime_id,))
   seats = cursor.fetchall()
   
-  # Note: passing showtime_data as 'showtime' to the template
   return render_template("seats.html", showtime=showtime_data, seats=seats)
 
-# Booking now requires showtime_id and seat_id (from the showtime-specific seats table)
 @app.route('/book/<int:showtime_id>/<int:seat_id>', methods=["GET", "POST"])
 def book(showtime_id, seat_id):
-  # 1. Check if seat is valid and booked
   cursor.execute("SELECT * FROM seats WHERE id=%s AND showtime_id=%s", (seat_id, showtime_id))
   seat = cursor.fetchone()
   
@@ -166,37 +270,31 @@ def book(showtime_id, seat_id):
   if seat["is_booked"]:
     return "Seat already booked!"
 
-  # 2. Fetch movie/showtime details for display
   cursor.execute("""
       SELECT st.id AS showtime_id, st.show_time, m.title, m.id AS movie_id
       FROM showtimes st
       JOIN movies m ON st.movie_id = m.id
       WHERE st.id=%s
   """, (showtime_id,))
-  showtime_data = cursor.fetchone() # This variable now contains movie title and showtime
+  showtime_data = cursor.fetchone() 
 
   if request.method == "POST":
     username = request.form["username"]
     email = request.form["email"]
     ticket_id = generate_ticket_id()
 
-    # Mark seat as booked
     cursor.execute("UPDATE seats SET is_booked=TRUE WHERE id=%s", (seat_id,))
     
-    # Save booking: Using showtime_id and the specific seat_id. 
-    # NOTE: Assuming the 'bookings' table schema has been updated to use showtime_id.
     cursor.execute("INSERT INTO bookings (ticket_id, username, email, showtime_id, seat_id) VALUES (%s,%s,%s,%s,%s)",
              (ticket_id, username, email, showtime_id, seat_id))
     db.commit()
 
     return redirect(url_for("ticket", ticket_id=ticket_id))
 
-  # Pass showtime_data as 'movie' to reuse book.html structure easily
   return render_template("book.html", movie=showtime_data, seat=seat)
 
 @app.route('/ticket/<ticket_id>')
 def ticket(ticket_id):
-  # Updated query to join through seats, showtimes, and then movies
   cursor.execute("""
            SELECT 
                b.ticket_id, b.username, b.email, 
@@ -210,7 +308,6 @@ def ticket(ticket_id):
            WHERE b.ticket_id=%s
          """, (ticket_id,))
   booking = cursor.fetchone()
-  # ticket.html needs update to show show_time
   return render_template("ticket.html", booking=booking)
 
 if __name__ == "__main__":

@@ -1,0 +1,130 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    padding: 0;
+    background-color: #f4f4f9;
+    color: #333;
+}
+
+h1, h2 {
+    color: #0056b3;
+}
+
+a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 20px;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #0056b3;
+    color: white;
+}
+
+form {
+    margin-top: 15px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    max-width: 400px;
+}
+
+input[type="text"], input[type="password"], input[type="email"], 
+input[type="date"], input[type="time"], select {
+    width: 100%;
+    padding: 8px;
+    margin: 5px 0 10px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+/* Flash Messages */
+.flash-message {
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}
+
+/* Specific styling for Movie Poster Placeholder */
+.movie-item {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+}
+
+.poster-placeholder {
+    width: 100px;
+    height: 150px;
+    background-color: #ccc;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #666;
+    font-size: 10px;
+    border: 1px solid #999;
+    margin-right: 15px;
+}
+
+.movie-details {
+    flex-grow: 1;
+}
+
+/* Seat specific styles (already present, ensuring visibility) */
+.seat { 
+    display: inline-block; 
+    width: 40px; 
+    height: 40px; 
+    margin: 5px; 
+    text-align: center; 
+    line-height: 40px; 
+    border: 1px solid black; 
+    border-radius: 5px;
+    font-weight: bold;
+}
+.booked { 
+    background-color: #dc3545; /* Red */
+    color: white; 
+    cursor: not-allowed; 
+}
+.available { 
+    background-color: #28a745; /* Green */
+}
+.available a {
+    color: white;
+    display: block;
+    text-decoration: none;
+}

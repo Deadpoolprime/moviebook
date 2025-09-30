@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
-<head><title>Book Seat</title></head>
+<head><title>Book Seat</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
 <body>
   <!-- movie variable now holds showtime data -->
   <h1>Book {{ seat.seat_no }} for {{ movie.title }} ({{ movie.show_time }})</h1>

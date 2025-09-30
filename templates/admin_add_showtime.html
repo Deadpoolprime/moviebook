@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
-<head><title>Add Showtime</title></head>
+<head><title>Add Showtime</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
 <body>
 <h1>Add Showtime</h1>
 <form method="POST">
@@ -11,11 +12,9 @@
         {% endfor %}
     </select><br><br>
     
-    <!-- CHANGE 1: Use type="date" input -->
     <label>Date:</label>
     <input type="date" name="show_date" required><br><br>
     
-    <!-- CHANGE 2: Use type="time" input -->
     <label>Time:</label>
     <input type="time" name="show_time_only" required><br><br>
     
