@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
 <body>
 <h1>All Bookings</h1>
+<button onclick="toggleTheme()" style="float: right;">Toggle Theme</button>
 <table border="1">
 <tr><th>Ticket ID</th><th>Name</th><th>Email</th><th>Movie</th><th>Time</th><th>Seat</th></tr>
 {% for b in bookings %}
@@ -17,5 +18,6 @@
 </tr>
 {% endfor %}
 </table>
+<script src="{{ url_for('static', filename='theme_toggle.js') }}"></script>
 </body>
 </html>

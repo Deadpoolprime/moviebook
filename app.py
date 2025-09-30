@@ -1,8 +1,20 @@
 from flask import Flask, render_template, request, redirect, url_for, abort,flash
 import mysql.connector, random, string
 
+import os
+from werkzeug.utils import secure_filename 
+
 app = Flask(__name__)
 
+UPLOAD_FOLDER = 'static/posters'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 # MySQL connection
 db = mysql.connector.connect(
   host="localhost",
@@ -48,17 +60,80 @@ def admin_bookings():
   bookings = cursor.fetchall()
   return render_template("admin_bookings.html", bookings=bookings)
 
+
 @app.route('/admin/add_movie', methods=["GET", "POST"])
 def add_movie():
-  password = request.args.get("password")
-  check_admin(password)
-  if request.method == "POST":
-    title = request.form["title"]
-    cursor.execute("INSERT INTO movies (title) VALUES (%s)", (title,))
-    db.commit()
-    flash(f"Movie '{title}' added successfully! Now add showtimes.")
-    return redirect(f"/admin/add_movie?password=admin123")
-  return render_template("add_movie.html")
+    password = request.args.get("password")
+    check_admin(password)
+    
+    poster_url = None
+
+    if request.method == "POST":
+        title = request.form["title"]
+        
+        # Handle Poster Upload
+        if 'poster' in request.files:
+            file = request.files['poster']
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(file_path)
+                poster_url = os.path.join(app.config['UPLOAD_FOLDER'], filename).replace('\\', '/') # Store path for database
+
+        # Insert new movie with optional poster URL
+        cursor.execute("INSERT INTO movies (title, poster_url) VALUES (%s, %s)", (title, poster_url))
+        db.commit()
+        
+        flash(f"Movie '{title}' added successfully! Now add showtimes.")
+        return redirect(f"/admin/add_movie?password=admin123")
+        
+    return render_template("add_movie.html")
+
+# NEW FEATURE: Edit Movie Details (Name and Poster)
+@app.route('/admin/edit_movie', methods=["GET"])
+def admin_edit_movie_list():
+    password = request.args.get("password")
+    check_admin(password)
+    
+    # Display list of movies to choose from
+    cursor.execute("SELECT id, title, poster_url FROM movies ORDER BY title")
+    movies = cursor.fetchall()
+    
+    return render_template("admin_edit_movie_list.html", movies=movies)
+
+
+@app.route('/admin/edit_movie/<int:movie_id>', methods=["GET", "POST"])
+def admin_edit_movie(movie_id):
+    password = request.args.get("password")
+    check_admin(password)
+
+    cursor.execute("SELECT id, title, poster_url FROM movies WHERE id = %s", (movie_id,))
+    movie = cursor.fetchone()
+    if not movie:
+        abort(404)
+
+    if request.method == "POST":
+        new_title = request.form["title"]
+        current_poster_url = movie['poster_url']
+        
+        # Handle new Poster Upload
+        if 'poster' in request.files:
+            file = request.files['poster']
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(file_path)
+                current_poster_url = os.path.join(app.config['UPLOAD_FOLDER'], filename).replace('\\', '/')
+        
+        # Update Database
+        cursor.execute("UPDATE movies SET title = %s, poster_url = %s WHERE id = %s", 
+                       (new_title, current_poster_url, movie_id))
+        db.commit()
+        
+        flash(f"Movie '{new_title}' updated successfully!")
+        return redirect(f"/admin/edit_movie?password=admin123") # Redirect to list view
+
+    return render_template("admin_edit_movie.html", movie=movie)
 
 @app.route('/admin/add_showtime', methods=["GET", "POST"])
 def admin_add_showtime():

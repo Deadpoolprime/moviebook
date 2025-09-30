@@ -5,31 +5,54 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-<h1>Welcome to Movie Booking</h1>
-
+<h1>Movie Booking</h1>
+<button onclick="toggleTheme()" style="float: right;">Toggle Theme</button>
 <h2>Available Movies</h2>
-<ul>
-{% for movie in movies %}
-  <li>{{ movie.title }} - <a href="/timings/{{ movie.id }}">Select Showtime</a></li>
-{% endfor %}
-</ul>
-
-<hr>
-<h2>Admin Panel</h2>
-<form method="POST">
-    <input type="password" name="admin_password" placeholder="Enter admin password" required>
-    <button type="submit">Login as Admin</button>
-</form>
 
 {% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <ul style="color:red;">
-      {% for msg in messages %}
-        <li>{{ msg }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
+ {% if messages %}
+  <ul class="flash-message">
+   {% for msg in messages %}
+    <li>{{ msg }}</li>
+   {% endfor %}
+  </ul>
+ {% endif %}
 {% endwith %}
 
+<div class="movie-grid">
+{% for movie in movies %}
+  <div class="movie-card">
+    
+    <!-- Poster acts as the main link to select showtimes -->
+    <a href="/timings/{{ movie.id }}" class="poster-link">
+        {% if movie.poster_url %}
+            <!-- Use the uploaded image -->
+            <!-- Note: We use .replace('static/', '') because url_for('static', filename=...) automatically prefixes 'static/' -->
+            <img src="{{ url_for('static', filename=movie.poster_url.replace('static/', '')) }}" alt="{{ movie.title }}" class="poster-placeholder" style="background: none; object-fit: cover;">
+        {% else %}
+            <!-- Use the placeholder div -->
+            <div class="poster-placeholder">
+                {{ movie.title }} Poster Placeholder
+            </div>
+        {% endif %}
+    </a>
+    
+    <div class="movie-info">
+        <h3>{{ movie.title }}</h3>
+        <a href="/timings/{{ movie.id }}">Select Showtime</a>
+    </div>
+  </div>
+{% endfor %}
+</div>
+<div class="admin-section">
+    <hr>
+    <h2>Admin Panel</h2>
+    <form method="POST">
+      <input type="password" name="admin_password" placeholder="Enter admin password" required>
+      <button type="submit">Login as Admin</button>
+    </form>
+</div>
+<script src="{{ url_for('static', filename='theme_toggle.js') }}"></script>
 </body>
 </html>
+

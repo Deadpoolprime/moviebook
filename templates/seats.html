@@ -11,6 +11,7 @@
 </head>
 <body>
   <h1>Seats for {{ showtime.title }} ({{ showtime.show_time }})</h1>
+  <button onclick="toggleTheme()" style="float: right;">Toggle Theme</button>
   <div>
   {% for seat in seats %}
     <div class="seat {% if seat.is_booked %}booked{% else %}available{% endif %}">
@@ -24,5 +25,6 @@
     {% if loop.index % 5 == 0 %}<br>{% endif %}
   {% endfor %}
   </div>
+  <script src="{{ url_for('static', filename='theme_toggle.js') }}"></script>
 </body>
 </html>

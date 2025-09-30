@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
 <body>
 <h1>Add Showtime</h1>
+<button onclick="toggleTheme()" style="float: right;">Toggle Theme</button>
 <form method="POST">
     <label>Movie:</label>
     <select name="movie_id" required>
@@ -20,5 +21,6 @@
     
     <button type="submit">Add Showtime</button>
 </form>
+<script src="{{ url_for('static', filename='theme_toggle.js') }}"></script>
 </body>
 </html>

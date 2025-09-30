@@ -4,7 +4,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
 <body>
 <h1>Remove Movie</h1>
-
+<button onclick="toggleTheme()" style="float: right;">Toggle Theme</button>
 {% with messages = get_flashed_messages() %}
  {% if messages %}
   <ul style="color:green;">
@@ -35,5 +35,6 @@
 {% endif %}
 
 <p><a href="/admin/dashboard">Back to Dashboard</a></p>
+<script src="{{ url_for('static', filename='theme_toggle.js') }}"></script>
 </body>
 </html>
