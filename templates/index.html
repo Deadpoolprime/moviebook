@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Movie Booking</title>
+  <title>Movie Booking</title>
 </head>
 <body>
 <h1>Welcome to Movie Booking</h1>
@@ -9,7 +9,7 @@
 <h2>Available Movies</h2>
 <ul>
 {% for movie in movies %}
-    <li>{{ movie.title }} - <a href="/seats/{{ movie.id }}">View Seats</a></li>
+  <li>{{ movie.title }} - <a href="/timings/{{ movie.id }}">Select Showtime</a></li>
 {% endfor %}
 </ul>
 

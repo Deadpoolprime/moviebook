@@ -2,11 +2,12 @@
 <html>
 <head><title>Book Seat</title></head>
 <body>
-    <h1>Book {{ seat.seat_no }} for {{ movie.title }}</h1>
-    <form method="POST">
-        <label>Name:</label><input type="text" name="username" required><br>
-        <label>Email:</label><input type="email" name="email" required><br>
-        <button type="submit">Confirm Booking</button>
-    </form>
+  <!-- movie variable now holds showtime data -->
+  <h1>Book {{ seat.seat_no }} for {{ movie.title }} ({{ movie.show_time }})</h1>
+  <form method="POST">
+    <label>Name:</label><input type="text" name="username" required><br>
+    <label>Email:</label><input type="email" name="email" required><br>
+    <button type="submit">Confirm Booking</button>
+  </form>
 </body>
 </html>
