@@ -1,16 +1,15 @@
-<!DOCTYPE html>
-<html>
-<head><title>Book Seat</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
-<body>
-  <!-- movie variable now holds showtime data -->
-  <h1>Book {{ seat.seat_no }} for {{ movie.title }} ({{ movie.show_time }})</h1>
-  <button onclick="toggleTheme()" style="float: right;">Toggle Theme</button>
-  <form method="POST">
-    <label>Name:</label><input type="text" name="username" required><br>
-    <label>Email:</label><input type="email" name="email" required><br>
+{% extends "base.html" %}
+
+{% block title %}Book Seat{% endblock %}
+
+{% block content %}
+ <!-- The 'movie' variable holds all showtime data -->
+ <h1>Book {{ seat.seat_no }} for {{ movie.title }} ({{ movie.show_time }})</h1>
+ 
+ <form method="POST">
+    <p>You are logged in as <strong>{{ session.username }}</strong>.</p>
+    <p>Click below to confirm your booking for seat <strong>{{ seat.seat_no }}</strong>.</p>
+    <br>
     <button type="submit">Confirm Booking</button>
-  </form>
-  <script src="{{ url_for('static', filename='theme_toggle.js') }}"></script>
-</body>
-</html>
+ </form>
+{% endblock %}
