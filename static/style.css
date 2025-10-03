@@ -17,15 +17,15 @@
 
 .dark-mode {
     /* Dark Mode Overrides */
-    --background-color: #1a1a1a;
+    --background-color: #000000;
     --text-color: #e0e0e0;
-    --header-color: #90caf9;
-    --link-color: #bb86fc;
+    --header-color: #ffffff;
+    --link-color: hsl(0, 100%, 60%);
     --card-background: #2c2c2c;
     --border-color: #444444;
     --admin-separator: #555;
-    --button-primary: #bb86fc;
-    --button-hover: #9c68c6;
+    --button-primary: #a40000;
+    --button-hover: #660000;
     --input-background: #333333;
     --table-header-bg: #444444;
     --flash-bg: #401f4c;
